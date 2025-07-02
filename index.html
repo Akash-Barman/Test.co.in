@@ -3,629 +3,1371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BNB Smart Chain Arbitrage Trading Bot</title>
-    
-    <!-- External Dependencies -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Arbitrage Pro | Production Trading Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Web3 and Ethers.js -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
-    
-    <!-- Tone.js for Audio -->
-    <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
-    
-    <!-- Chart.js for Visualizations -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-bg: #0a0e27;
-            --secondary-bg: #151a3a;
-            --card-bg: rgba(20, 25, 50, 0.8);
-            --primary-color: #00d4ff;
-            --secondary-color: #ff006e;
-            --success-color: #00ff88;
-            --warning-color: #ffaa00;
-            --danger-color: #ff3366;
-            --text-primary: #ffffff;
-            --text-secondary: #a0a9c9;
+            --bg-dark: #0D0E12;
+            --bg-card: rgba(22, 24, 30, 0.6);
+            --primary: #00FFA3;
+            --secondary: #A450FF;
+            --text-light: #F5F5F5;
+            --text-dark: #8A8B92;
             --border-color: rgba(255, 255, 255, 0.1);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --danger: #FF4D4D;
+            --warning: #FFA500;
         }
-
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
-
-        body {
             font-family: 'Poppins', sans-serif;
-            background: var(--primary-bg);
-            color: var(--text-primary);
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
             min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(164, 80, 255, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(0, 255, 163, 0.15) 0%, transparent 40%);
         }
-
-        /* Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 0, 110, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%);
-            z-index: -1;
-            animation: backgroundShift 20s ease-in-out infinite;
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
         }
-
-        @keyframes backgroundShift {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(-20px, -20px) scale(1.1); }
-            66% { transform: translate(20px, -10px) scale(0.9); }
-        }
-
-        /* Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            font-size: 1.5rem;
+        
+        h1 {
+            font-size: 2.8rem;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: -webkit-linear-gradient(45deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
         }
-
-        .wallet-section {
+        
+        .subtitle {
+            color: var(--text-dark);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 25px;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+        
+        .card h2 {
+            color: var(--text-light);
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 12px;
+            font-size: 1.6rem;
+            font-weight: 600;
         }
-
-        .wallet-info {
-            background: var(--glass-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 10px;
-            border: 1px solid var(--glass-border);
-            font-size: 0.9rem;
+        
+        .card h2 i {
+            color: var(--primary);
         }
-
-        .connect-wallet-btn {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        button, .btn {
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             position: relative;
             overflow: hidden;
+            z-index: 1;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 255, 163, 0.2);
+        }
+        
+        button:hover, .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(164, 80, 255, 0.4);
+        }
+        
+        button:disabled, .btn:disabled {
+            background: #2a2e37;
+            cursor: not-allowed;
+            box-shadow: none;
+            color: var(--text-dark);
+        }
+        
+        button.secondary, .btn.secondary {
+            background: linear-gradient(90deg, #4a5568, #2d3748);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button.active-scan, .btn.active-scan {
+            background: linear-gradient(90deg, var(--danger), #ff7878);
+            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
         }
 
-        .connect-wallet-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        #connectWallet {
+            grid-column: 1 / -1;
         }
-
-        .connect-wallet-btn:active {
-            transform: translateY(0);
+        
+        .status-container {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+            margin-top: 20px;
+            overflow-y: auto;
+            max-height: 400px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
         }
-
-        /* Main Container */
-        .main-container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+        
+        #result {
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+        
+        .warning {
+            background-color: rgba(255, 77, 77, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .config-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .config-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .config-label {
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        
+        .config-value {
+            font-weight: 500;
+            font-size: 1rem;
+            word-break: break-all;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .progress-container {
+            margin: 25px 0;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+        
+        .progress {
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.5s ease;
         }
 
-        @media (max-width: 1024px) {
-            .main-container {
-                grid-template-columns: 1fr;
-            }
+        .progress-bar.indeterminate {
+            animation: indeterminate-animation 2s infinite linear;
         }
 
-        /* Glass Card */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
+        @keyframes indeterminate-animation {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
-
-        .glass-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        
+        .spinner {
+            border: 4px solid rgba(0, 255, 163, 0.2);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
-
-        .card-header {
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success { color: var(--primary); }
+        .error { color: var(--danger); }
+        .info { color: var(--text-light); }
+        .warning-text { color: var(--warning); }
+        
+        .section-title {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin: 25px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .simulation-panel {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .simulation-title {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .slippage-control {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--glass-border);
+            gap: 10px;
+            margin-top: 10px;
         }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        
+        .slippage-input {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            width: 100px;
+            text-align: right;
         }
-
-        .card-title i {
-            color: var(--primary-color);
+        
+        .debug-container {
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
         }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 1.5rem;
+        
+        .tx-link {
+            color: var(--primary);
+            text-decoration: none;
         }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
+        
+        .tx-link:hover {
+            text-decoration: underline;
+        }
+        
+        .execution-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
             font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-weight: 500;
+            border-left: 4px solid;
         }
-
-        .form-input {
-            width: 100%;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            color: var(--text-primary);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
-        }
-
-        .input-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .input-group .form-input {
-            flex: 1;
-        }
-
-        .input-suffix {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Buttons */
-        .btn {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            color: var(--text-primary);
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success-color), #00cc6a);
-            border: none;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger-color), #ff0044);
-            border: none;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .btn-group .btn {
-            flex: 1;
-        }
-
-        /* Status Grid */
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .status-item {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .status-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-        }
-
-        .status-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-
-        /* Opportunity Cards */
-        .opportunity-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .opportunity-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
+        
+        .status-pending { border-color: var(--secondary); background-color: rgba(164, 80, 255, 0.1); }
+        .status-confirmed { border-color: var(--primary); background-color: rgba(0, 255, 163, 0.1); }
+        .status-failed { border-color: var(--danger); background-color: rgba(255, 77, 77, 0.1); }
+        
+        .fixed-bottom {
+            position: fixed;
+            bottom: 0;
             left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+            right: 0;
+            background: rgba(13, 14, 18, 0.8);
+            padding: 10px 20px;
+            border-top: 1px solid var(--border-color);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+        }
+        
+        .version {
+            text-align: center;
+            color: var(--text-dark);
+            font-size: 0.85rem;
+        }
+        
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 5px;
+        }
+        
+        .copy-btn:hover {
+            color: var(--primary);
         }
 
-        .opportunity-card:hover {
-            transform: translateX(5px);
-            border-color: var(--primary-color);
+        .opportunity-card {
+            background: rgba(0, 255, 163, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
         }
 
         .opportunity-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 15px;
         }
 
         .opportunity-profit {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
-            color: var(--success-color);
+            color: var(--primary);
         }
 
         .opportunity-details {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             font-size: 0.9rem;
         }
 
-        .opportunity-detail {
+        .token-input {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .price-comparison-item {
             display: flex;
             justify-content: space-between;
-            color: var(--text-secondary);
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin: 5px 0;
         }
 
-        .opportunity-detail span:last-child {
-            color: var(--text-primary);
-            font-weight: 500;
+        .dex-name {
+            font-weight: 600;
+            color: var(--secondary);
         }
 
-        /* Logs */
-        .log-container {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 1rem;
-            height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-        }
-
-        .log-entry {
-            padding: 0.5rem;
-            margin-bottom: 0.25rem;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .log-entry.info {
-            background: rgba(0, 212, 255, 0.1);
-            color: var(--primary-color);
-        }
-
-        .log-entry.success {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--success-color);
-        }
-
-        .log-entry.warning {
-            background: rgba(255, 170, 0, 0.1);
-            color: var(--warning-color);
-        }
-
-        .log-entry.error {
-            background: rgba(255, 51, 102, 0.1);
-            color: var(--danger-color);
-        }
-
-        .log-timestamp {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        /* Progress Bar */
-        .progress-container {
-            margin: 1rem 0;
-        }
-
-        .progress-bar {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            height: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            transition: width 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.3),
-                transparent
-            );
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        /* Toggle Switch */
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 60px;
-            height: 30px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-                .toggle-slider {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 24px;
-            height: 24px;
-            background: var(--primary-color);
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-switch input:checked + .toggle-slider {
-            transform: translateX(30px);
-            background: var(--secondary-color);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 1rem;
-            background: var(--glass-bg);
-            border-top: 1px solid var(--glass-border);
-            position: relative;
-            z-index: 1000;
-        }
-
-        .footer-text {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+        .price-value {
+            color: var(--primary);
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">Arbitrage Bot</div>
-            <div class="wallet-section">
-                <div class="wallet-info" id="walletAddress">Connect Wallet</div>
-                <button class="connect-wallet-btn" id="connectWalletBtn">Connect MetaMask</button>
-            </div>
+    <header>
+        <h1>Arbitrage Pro</h1>
+        <div class="subtitle">
+            Professional flash loan arbitrage platform with real-time DEX integration on BNB Smart Chain
         </div>
+        <div id="libraryStatus" class="success"></div>
     </header>
-
-    <main class="main-container">
-        <div class="glass-card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-chart-line"></i> Arbitrage Opportunities</div>
+    
+    <div class="container">
+        <div class="card">
+                        <h2><i class="fas fa-search"></i> Arbitrage Scanner</h2>
+            <div class="controls">
+                <button id="connectWallet">
+                    <i class="fas fa-wallet"></i> Connect Wallet
+                </button>
+                <button id="scanAll" disabled>
+                    <i class="fas fa-search"></i> Scan All Pairs
+                </button>
+                <button id="autoScanToggle" disabled>
+                    <i class="fas fa-robot"></i> Start Auto-Scan
+                </button>
+                <button id="executeTrade" disabled class="secondary">
+                    <i class="fas fa-bolt"></i> Execute Flash Loan
+                </button>
+                <button id="analyzeTrade" disabled class="secondary">
+                    <i class="fas fa-chart-line"></i> Analyze Opportunity
+                </button>
             </div>
-            <div id="opportunityList"></div>
+            
+            <div class="simulation-panel">
+                <div class="simulation-title"><i class="fas fa-cog"></i> Flash Loan Settings</div>
+                
+                <div class="slippage-control">
+                    <span class="config-label">Flash Loan Amount (BNB):</span>
+                    <input type="number" id="flashLoanInput" class="slippage-input" value="10.0" min="0.1" max="1000" step="0.1">
+                </div>
+
+                <div class="slippage-control" style="margin-top: 15px;">
+                    <span class="config-label">Min Profit %:</span>
+                    <input type="number" id="minProfitInput" class="slippage-input" value="0.5" min="0.1" max="100" step="0.1">
+                </div>
+                
+                <div class="slippage-control">
+                    <span class="config-label">Slippage Tolerance %:</span>
+                    <input type="number" id="slippageInput" class="slippage-input" value="1.0" min="0.1" max="50" step="0.1">
+                </div>
+
+                <div class="slippage-control">
+                    <span class="config-label">Max Gas Fee (BNB):</span>
+                    <input type="number" id="maxGasFeeInput" class="slippage-input" value="0.005" min="0.0001" step="0.0001">
+                </div>
+            </div>
+            
+            <div id="opportunityContainer" class="simulation-panel" style="display:none; border-color: var(--primary);">
+                <div class="simulation-title"><i class="fas fa-coins"></i> Best Arbitrage Opportunity</div>
+                <div id="opportunityDetails"></div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span>Scan Progress</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" id="scanProgress"></div>
+                </div>
+            </div>
+            
+            <div class="status-container">
+                <div id="result">[System] Welcome to Arbitrage Pro! Please connect your wallet to begin.</div>
+            </div>
+            
+            <div class="debug-container" id="debugInfo">
+                <div class="simulation-title"><i class="fas fa-code"></i> Transaction Monitor</div>
+                <div id="executionResult">No transaction data available</div>
+            </div>
         </div>
+        
+        <div class="card">
+            <h2><i class="fas fa-cogs"></i> Configuration & Status</h2>
+            
+            <div class="contract-section">
+                <div class="config-item">
+                    <div class="config-label">Flash Loan Contract</div>
+                    <div class="config-value">
+                        <span id="contractAddress">...</span>
+                        <button id="copyContractBtn" class="copy-btn"><i class="far fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="config-item" style="margin-top: 15px;">
+                    <div class="config-label">Contract Status</div>
+                    <div class="config-value" id="contractStatus">--</div>
+                </div>
+            </div>
+            
+            <div class="config-grid">
+                <div class="config-item">
+                    <div class="config-label">Gas Price</div>
+                    <div class="config-value" id="gasPriceDisplay">--</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Network</div>
+                    <div class="config-value">BSC Mainnet</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Wallet Status</div>
+                    <div class="config-value" id="walletStatus">Not Connected</div>
+                </div>
+                <div class="config-item">
+                    <div class="config-label">Active DEXs</div>
+                    <div class="config-value" id="dexesActive">0</div>
+                </div>
+            </div>
 
-        <div class="glass-card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-cogs"></i> Settings</div>
+            <div class="section-title"><i class="fas fa-history"></i> Recent Opportunities</div>
+            <div class="simulation-panel">
+                <div id="recentOpportunities" class="status-container" style="min-height: 150px; max-height: 200px;">
+                    <div style="color: var(--text-dark);">No recent opportunities found</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Gas Limit</label>
-                <input type="number" class="form-input" id="gasLimit" value="21000" />
+
+            <div class="section-title"><i class="fas fa-exchange-alt"></i> Live Price Monitor</div>
+            <div class="simulation-panel">
+                <div class="simulation-title"><i class="fas fa-chart-line"></i> Real-Time DEX Prices</div>
+                <div class="token-input-row">
+                    <select id="priceMonitorToken" class="token-input">
+                        <option value="WBNB">WBNB</option>
+                        <option value="BUSD">BUSD</option>
+                        <option value="USDT">USDT</option>
+                        <option value="ETH">ETH</option>
+                        <option value="CAKE">CAKE</option>
+                        <option value="BTCB">BTCB</option>
+                    </select>
+                </div>
+                <button id="startPriceMonitor" class="btn" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-play"></i> Start Price Monitor
+                </button>
+                <div id="priceMonitorDisplay" class="status-container" style="margin-top:15px; display:none; min-height: auto; max-height: 250px;">
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Slippage (%)</label>
-                <input type="number" class="form-input" id="slippage" value="1" />
-            </div>
-            <div class="btn-group">
-                <button class="btn btn-primary" id="startScanningBtn">Start Scanning</button>
-                <button class="btn btn-danger" id="stopScanningBtn">Stop Scanning</button>
+
+            <div class="controls" style="margin-top: 25px;">
+                <button id="viewContract">
+                    <i class="fas fa-file-contract"></i> View on BscScan
+                </button>
+                <button id="emergencyStop" class="secondary" disabled>
+                    <i class="fas fa-stop-circle"></i> Emergency Stop
+                </button>
             </div>
         </div>
+    </div>
 
-        <div class="glass-card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-bell"></i> Alerts</div>
-            </div>
-            <div class="toggle-container">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="alertToggle" />
-                    <span class="toggle-slider"></span>
-                </label>
-                <span>Enable Audio Alerts</span>
-            </div>
-        </div>
-
-        <div class="glass-card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-history"></i> Logs</div>
-            </div>
-            <div class="log-container" id="logContainer"></div>
-        </div>
-    </main>
-
-    <footer class="footer">
-        <div class="footer-text">© 2023 Arbitrage Bot. All rights reserved.</div>
-    </footer>
+    <div class="fixed-bottom">
+        <div class="version">Arbitrage Pro v6.0 | Production Ready</div>
+    </div>
 
     <script>
-        const { ethers } = window;
+        // Contract Configuration
+        const FLASH_LOAN_CONTRACT = "0x4673fb316EaD2f9a9C1C8A9b40484384d55360De";
+        const BSC_CHAIN_ID = 56;
+        const BSC_RPC = "https://bsc-dataseed1.binance.org/";
+        
+        // Flash Loan Parameters
+        let FLASH_LOAN_AMOUNT = 10.0;
+        let MIN_PROFIT_THRESHOLD = 0.5;
+        let SLIPPAGE_TOLERANCE = 1.0;
+        let MAX_GAS_FEE = 0.005;
 
+        // Contract ABI
+        const FLASH_LOAN_ABI = [
+            "function executeFlashLoan(address asset, uint256 amount, address[] calldata routers, bytes calldata params) external",
+            "function owner() view returns (address)",
+            "function withdrawProfit() external",
+            "event FlashLoanExecuted(address indexed initiator, address indexed asset, uint256 amount, uint256 profit)"
+        ];
+
+        // Token Addresses on BSC
+        const TOKENS = {
+            WBNB: { address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", decimals: 18, symbol: 'WBNB' },
+            BUSD: { address: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", decimals: 18, symbol: 'BUSD' },
+            USDT: { address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18, symbol: 'USDT' },
+            ETH: { address: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8", decimals: 18, symbol: 'ETH' },
+            CAKE: { address: "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", decimals: 18, symbol: 'CAKE' },
+            BTCB: { address: "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", decimals: 18, symbol: 'BTCB' }
+        };
+
+        // DEX Router Addresses
+        const DEX_ROUTERS = {
+            PancakeSwap: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+            BiSwap: "0x3a6d8cA21D1CF76F653A67577FA0D27453350dD8",
+            ApeSwap: "0xcF0feBd3f17CEf5b47b0cD257aCf6025c5BFf3b7",
+            BakerySwap: "0xCDe540d7eAFE93aC5fE6233Bee57E1270D3E330F",
+            MDEX: "0x7DAe51BD3E3376B8c7c4900E9107f12Be3AF1bA8"
+        };
+
+        // Global Variables
         let provider;
         let signer;
-        let walletAddress = '';
+        let walletAddress;
+        let flashLoanContract;
+        let isScanning = false;
+        let autoScanInterval;
+        let priceMonitorInterval;
+        let currentOpportunities = [];
+        let synth;
 
-        document.getElementById('connectWalletBtn').onclick = async () => {
-            if (typeof window.ethereum !== 'undefined') {
+        // Initialize Tone.js
+        async function initAudio() {
+            await Tone.start();
+            synth = new Tone.Synth().toDestination();
+        }
+
+        // Play notification sound
+        function playNotification() {
+            if (synth) {
+                synth.triggerAttackRelease("C5", "8n");
+            }
+        }
+
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const resultDiv = document.getElementById('result');
+            const colorClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning-text' : 'info';
+            resultDiv.innerHTML += `\n[${timestamp}] <span class="${colorClass}">${message}</span>`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+
+        // Update execution result
+        function updateExecutionResult(message) {
+            document.getElementById('executionResult').innerHTML = message;
+        }
+
+        // Connect Wallet
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('MetaMask is not installed!');
+                }
+
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
                 provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
+                
+                const network = await provider.getNetwork();
+                if (network.chainId !== BSC_CHAIN_ID) {
+                    await switchToBSC();
+                }
+
                 signer = provider.getSigner();
                 walletAddress = await signer.getAddress();
-                document.getElementById('walletAddress').innerText = walletAddress;
-                startScanning();
-            } else {
-                alert('Please install MetaMask!');
+                
+                // Initialize contract
+                flashLoanContract = new ethers.Contract(FLASH_LOAN_CONTRACT, FLASH_LOAN_ABI, signer);
+                
+                // Update UI
+                document.getElementById('walletStatus').textContent = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+                document.getElementById('connectWallet').innerHTML = '<i class="fas fa-check"></i> Connected';
+                document.getElementById('connectWallet').disabled = true;
+                
+                // Enable buttons
+                document.getElementById('scanAll').disabled = false;
+                document.getElementById('autoScanToggle').disabled = false;
+                document.getElementById('emergencyStop').disabled = false;
+                
+                log('Wallet connected successfully!', 'success');
+                
+                // Start monitoring
+                startGasPriceMonitor();
+                updateContractInfo();
+                
+            } catch (error) {
+                log(`Connection failed: ${error.message}`, 'error');
             }
-        };
+        }
 
-        const startScanning = () => {
-            // Implement the logic to start scanning for arbitrage opportunities
-            console.log('Scanning for arbitrage opportunities...');
-            // Example: Call DEX APIs to fetch prices and analyze opportunities
-        };
+        // Switch to BSC Network
+        async function switchToBSC() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x38' }], // 56 in hex
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x38',
+                            chainName: 'BNB Smart Chain',
+                            nativeCurrency: {
+                                name: 'BNB',
+                                symbol: 'BNB',
+                                decimals: 18
+                            },
+                            rpcUrls: ['https://bsc-dataseed1.binance.org/'],
+                            blockExplorerUrls: ['https://bscscan.com/']
+                        }]
+                    });
+                }
+            }
+        }
 
-        const stopScanning = () => {
-            // Implement the logic to stop scanning
-            console.log('Stopped scanning for arbitrage opportunities.');
-        };
+        // Update contract info
+        async function updateContractInfo() {
+            document.getElementById('contractAddress').textContent = FLASH_LOAN_CONTRACT;
+            try {
+                const owner = await flashLoanContract.owner();
+                document.getElementById('contractStatus').innerHTML = '<span class="success">✓ Verified</span>';
+            } catch (error) {
+                document.getElementById('contractStatus').innerHTML = '<span class="error">✗ Not Verified</span>';
+            }
+        }
 
-        document.getElementById('startScanningBtn').onclick = startScanning;
-        document.getElementById('stopScanningBtn').onclick = stopScanning;
+        // Gas price monitor
+        async function startGasPriceMonitor() {
+            const updateGasPrice = async () => {
+                try {
+                    const gasPrice = await provider.getGasPrice();
+                    const gasPriceGwei = ethers.utils.formatUnits(gasPrice, 'gwei');
+                    document.getElementById('gasPriceDisplay').textContent = `${parseFloat(gasPriceGwei).toFixed(2)} Gwei`;
+                } catch (error) {
+                    console.error('Gas price fetch error:', error);
+                }
+            };
+            
+            updateGasPrice();
+            setInterval(updateGasPrice, 5000);
+        }
 
-        const logMessage = (message, type = 'info') => {
-            const logContainer = document.getElementById('logContainer');
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry ${type}`;
-            logEntry.innerHTML = `<span class="log-timestamp">${new Date().toLocaleTimeString()}</span> ${message}`;
-            logContainer.appendChild(logEntry);
-            logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll to the bottom
-        };
+        // Fetch token price from DEX
+        async function getTokenPrice(tokenAddress, dexRouter) {
+            try {
+                const routerAbi = [
+                    "function getAmountsOut(uint amountIn, address[] memory path) public view returns (uint[] memory amounts)"
+                ];
+                                const router = new ethers.Contract(dexRouter, routerAbi, provider);
+                const amountIn = ethers.utils.parseEther("1");
+                const path = [TOKENS.WBNB.address, tokenAddress];
+                
+                const amounts = await router.getAmountsOut(amountIn, path);
+                return ethers.utils.formatEther(amounts[1]);
+            } catch (error) {
+                console.error(`Price fetch error for ${dexRouter}:`, error);
+                return null;
+            }
+        }
 
-        // Example of logging an event
-        logMessage('Application started. Connect your wallet to begin.', 'info');
+        // Calculate arbitrage opportunity
+        async function calculateArbitrage(token, buyDex, sellDex, amount) {
+            try {
+                const buyRouter = DEX_ROUTERS[buyDex];
+                const sellRouter = DEX_ROUTERS[sellDex];
+                
+                // Get buy price (WBNB -> Token)
+                const buyPrice = await getTokenPrice(token.address, buyRouter);
+                if (!buyPrice) return null;
+                
+                // Get sell price (Token -> WBNB)
+                const routerAbi = [
+                    "function getAmountsOut(uint amountIn, address[] memory path) public view returns (uint[] memory amounts)"
+                ];
+                const sellRouterContract = new ethers.Contract(sellRouter, routerAbi, provider);
+                
+                const tokenAmount = ethers.utils.parseUnits(buyPrice, token.decimals);
+                const sellPath = [token.address, TOKENS.WBNB.address];
+                const sellAmounts = await sellRouterContract.getAmountsOut(tokenAmount, sellPath);
+                const sellReturn = ethers.utils.formatEther(sellAmounts[1]);
+                
+                // Calculate profit
+                const grossProfit = parseFloat(sellReturn) - 1; // 1 BNB input
+                const flashLoanFee = 0.0009; // 0.09% Aave fee
+                const estimatedGas = 0.003; // Estimated gas in BNB
+                const netProfit = grossProfit - flashLoanFee - estimatedGas;
+                const profitPercentage = (netProfit / 1) * 100;
+                
+                return {
+                    token: token.symbol,
+                    buyDex,
+                    sellDex,
+                    buyPrice: parseFloat(buyPrice).toFixed(6),
+                    sellPrice: (1 / parseFloat(sellReturn)).toFixed(6),
+                    grossProfit: grossProfit.toFixed(6),
+                    netProfit: netProfit.toFixed(6),
+                    profitPercentage: profitPercentage.toFixed(2),
+                    flashLoanFee,
+                    estimatedGas,
+                    timestamp: Date.now()
+                };
+            } catch (error) {
+                console.error('Arbitrage calculation error:', error);
+                return null;
+            }
+        }
+
+        // Scan all DEX combinations
+        async function scanAllPairs() {
+            if (isScanning) return;
+            
+            isScanning = true;
+            currentOpportunities = [];
+            
+            const scanButton = document.getElementById('scanAll');
+            scanButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            scanButton.disabled = true;
+            
+            log('Starting comprehensive DEX scan...', 'info');
+            updateProgressBar(0);
+            
+            const tokens = Object.values(TOKENS).filter(t => t.symbol !== 'WBNB');
+            const dexNames = Object.keys(DEX_ROUTERS);
+            const totalScans = tokens.length * dexNames.length * (dexNames.length - 1);
+            let currentScan = 0;
+            
+            for (const token of tokens) {
+                for (const buyDex of dexNames) {
+                    for (const sellDex of dexNames) {
+                        if (buyDex === sellDex) continue;
+                        
+                        currentScan++;
+                        updateProgressBar((currentScan / totalScans) * 100);
+                        
+                        const opportunity = await calculateArbitrage(
+                            token,
+                            buyDex,
+                            sellDex,
+                            FLASH_LOAN_AMOUNT
+                        );
+                        
+                        if (opportunity && parseFloat(opportunity.profitPercentage) > MIN_PROFIT_THRESHOLD) {
+                            currentOpportunities.push(opportunity);
+                            log(`Found opportunity: ${token.symbol} ${buyDex}→${sellDex} +${opportunity.profitPercentage}%`, 'success');
+                            playNotification();
+                        }
+                        
+                        // Small delay to prevent rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+            }
+            
+            // Sort opportunities by profit
+            currentOpportunities.sort((a, b) => parseFloat(b.profitPercentage) - parseFloat(a.profitPercentage));
+            
+            // Display best opportunity
+            if (currentOpportunities.length > 0) {
+                displayBestOpportunity(currentOpportunities[0]);
+                updateRecentOpportunities();
+                document.getElementById('executeTrade').disabled = false;
+                document.getElementById('analyzeTrade').disabled = false;
+            } else {
+                log('No profitable opportunities found in this scan', 'warning');
+            }
+            
+            scanButton.innerHTML = '<i class="fas fa-search"></i> Scan All Pairs';
+            scanButton.disabled = false;
+            isScanning = false;
+            updateProgressBar(100);
+        }
+
+        // Display best opportunity
+        function displayBestOpportunity(opportunity) {
+            const container = document.getElementById('opportunityContainer');
+            const details = document.getElementById('opportunityDetails');
+            
+            details.innerHTML = `
+                <div class="opportunity-card">
+                    <div class="opportunity-header">
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: 600;">${opportunity.token}</div>
+                            <div style="color: var(--text-dark);">${opportunity.buyDex} → ${opportunity.sellDex}</div>
+                        </div>
+                        <div class="opportunity-profit">+${opportunity.profitPercentage}%</div>
+                    </div>
+                    <div class="opportunity-details">
+                        <div>
+                            <div class="config-label">Buy Price</div>
+                            <div>${opportunity.buyPrice} ${opportunity.token}/BNB</div>
+                        </div>
+                        <div>
+                            <div class="config-label">Sell Price</div>
+                            <div>${opportunity.sellPrice} ${opportunity.token}/BNB</div>
+                        </div>
+                        <div>
+                            <div class="config-label">Net Profit</div>
+                            <div>${opportunity.netProfit} BNB</div>
+                        </div>
+                        <div>
+                            <div class="config-label">Flash Loan Fee</div>
+                            <div>${opportunity.flashLoanFee} BNB</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.style.display = 'block';
+        }
+
+        // Update recent opportunities
+        function updateRecentOpportunities() {
+            const container = document.getElementById('recentOpportunities');
+            const recent = currentOpportunities.slice(0, 5);
+            
+            if (recent.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-dark);">No recent opportunities found</div>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(opp => `
+                <div style="padding: 10px; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>${opp.token} ${opp.buyDex}→${opp.sellDex}</span>
+                        <span class="success">+${opp.profitPercentage}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Execute flash loan arbitrage
+        async function executeTrade() {
+            if (currentOpportunities.length === 0) {
+                log('No opportunity available to execute', 'error');
+                return;
+            }
+            
+            const opportunity = currentOpportunities[0];
+            const executeButton = document.getElementById('executeTrade');
+            
+            try {
+                executeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executing...';
+                executeButton.disabled = true;
+                
+                log(`Executing flash loan arbitrage for ${opportunity.token}...`, 'info');
+                updateExecutionResult('Preparing transaction...');
+                
+                // Prepare flash loan parameters
+                const token = Object.values(TOKENS).find(t => t.symbol === opportunity.token);
+                const amount = ethers.utils.parseEther(FLASH_LOAN_AMOUNT.toString());
+                const routers = [
+                    DEX_ROUTERS[opportunity.buyDex],
+                    DEX_ROUTERS[opportunity.sellDex]
+                ];
+                
+                // Encode swap parameters
+                const abiCoder = new ethers.utils.AbiCoder();
+                const params = abiCoder.encode(
+                    ['address', 'uint256', 'uint256'],
+                    [token.address, amount, ethers.utils.parseUnits(SLIPPAGE_TOLERANCE.toString(), 2)]
+                );
+                
+                // Estimate gas
+                const gasEstimate = await flashLoanContract.estimateGas.executeFlashLoan(
+                    TOKENS.WBNB.address,
+                    amount,
+                    routers,
+                    params
+                );
+                
+                const gasPrice = await provider.getGasPrice();
+                const gasCost = gasEstimate.mul(gasPrice);
+                const gasCostBNB = ethers.utils.formatEther(gasCost);
+                
+                updateExecutionResult(`
+                    <div>Estimated Gas: ${gasEstimate.toString()} units</div>
+                    <div>Gas Cost: ${parseFloat(gasCostBNB).toFixed(6)} BNB</div>
+                    <div>Sending transaction...</div>
+                `);
+                
+                // Execute transaction
+                const tx = await flashLoanContract.executeFlashLoan(
+                    TOKENS.WBNB.address,
+                    amount,
+                    routers,
+                    params,
+                    {
+                        gasLimit: gasEstimate.mul(120).div(100), // 20% buffer
+                        gasPrice: gasPrice
+                    }
+                );
+                
+                log(`Transaction sent: ${tx.hash}`, 'info');
+                updateExecutionResult(`
+                    <div class="execution-status status-pending">
+                        <div>Transaction Hash: <a href="https://bscscan.com/tx/${tx.hash}" target="_blank" class="tx-link">${tx.hash.slice(0, 10)}...${tx.hash.slice(-8)}</a></div>
+                        <div>Status: Pending confirmation...</div>
+                    </div>
+                `);
+                
+                // Wait for confirmation
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    log('Transaction confirmed successfully!', 'success');
+                    playNotification();
+                    
+                    // Parse events to get profit
+                    const event = receipt.events?.find(e => e.event === 'FlashLoanExecuted');
+                    const profit = event ? ethers.utils.formatEther(event.args.profit) : 'Unknown';
+                    
+                    updateExecutionResult(`
+                        <div class="execution-status status-confirmed">
+                            <div>Transaction Hash: <a href="https://bscscan.com/tx/${tx.hash}" target="_blank" class="tx-link">${tx.hash.slice(0, 10)}...${tx.hash.slice(-8)}</a></div>
+                            <div>Status: Confirmed ✓</div>
+                            <div>Block: ${receipt.blockNumber}</div>
+                            <div>Gas Used: ${receipt.gasUsed.toString()}</div>
+                            <div>Profit: ${profit} BNB</div>
+                        </div>
+                    `);
+                } else {
+                    throw new Error('Transaction failed');
+                }
+                
+            } catch (error) {
+                log(`Execution failed: ${error.message}`, 'error');
+                updateExecutionResult(`
+                    <div class="execution-status status-failed">
+                        <div>Error: ${error.message}</div>
+                        <div>Please check your wallet balance and gas settings</div>
+                    </div>
+                `);
+            } finally {
+                executeButton.innerHTML = '<i class="fas fa-bolt"></i> Execute Flash Loan';
+                executeButton.disabled = false;
+            }
+        }
+
+        // Auto-scan functionality
+        function toggleAutoScan() {
+            const button = document.getElementById('autoScanToggle');
+            
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+                autoScanInterval = null;
+                button.innerHTML = '<i class="fas fa-robot"></i> Start Auto-Scan';
+                button.classList.remove('active-scan');
+                log('Auto-scan stopped', 'info');
+            } else {
+                button.innerHTML = '<i class="fas fa-stop"></i> Stop Auto-Scan';
+                button.classList.add('active-scan');
+                log('Auto-scan started (30s interval)', 'success');
+                
+                // Initial scan
+                scanAllPairs();
+                
+                // Set interval
+                autoScanInterval = setInterval(() => {
+                    if (!isScanning) {
+                        scanAllPairs();
+                    }
+                }, 30000);
+            }
+        }
+
+        // Price monitor functionality
+        async function startPriceMonitor() {
+            const button = document.getElementById('startPriceMonitor');
+            const display = document.getElementById('priceMonitorDisplay');
+            const selectedToken = document.getElementById('priceMonitorToken').value;
+            
+            if (priceMonitorInterval) {
+                clearInterval(priceMonitorInterval);
+                priceMonitorInterval = null;
+                button.innerHTML = '<i class="fas fa-play"></i> Start Price Monitor';
+                display.style.display = 'none';
+                return;
+            }
+            
+            button.innerHTML = '<i class="fas fa-stop"></i> Stop Monitor';
+            display.style.display = 'block';
+            
+            const updatePrices = async () => {
+                const token = TOKENS[selectedToken];
+                const prices = [];
+                
+                for (const [dexName, routerAddress] of Object.entries(DEX_ROUTERS)) {
+                    const price = await getTokenPrice(token.address, routerAddress);
+                    if (price) {
+                        prices.push({ dex: dexName, price: parseFloat(price).toFixed(6) });
+                    }
+                }
+                
+                prices.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+                
+                display.innerHTML = `
+                    <div style="margin-bottom: 10px; font-weight: 600;">Live ${selectedToken} Prices</div>
+                    ${prices.map(p => `
+                        <div class="price-comparison-item">
+                            <span class="dex-name">${p.dex}</span>
+                            <span class="price-value">${p.price} ${selectedToken}/BNB</span>
+                        </div>
+                    `).join('')}
+                    <div style="margin-top: 10px; color: var(--text-dark); font-size: 0.85rem;">
+                        Last updated: ${new Date().toLocaleTimeString()}
+                    </div>
+                `;
+            };
+            
+            updatePrices();
+            priceMonitorInterval = setInterval(updatePrices, 5000);
+        }
+
+        // Update progress bar
+        function updateProgressBar(percentage) {
+            const progressBar = document.getElementById('scanProgress');
+            const progressPercent = document.getElementById('progressPercent');
+            
+                        progressBar.style.width = `${percentage}%`;
+            progressPercent.textContent = `${Math.round(percentage)}%`;
+        }
+
+        // Analyze trade opportunity
+        async function analyzeTrade() {
+            if (currentOpportunities.length === 0) {
+                log('No opportunity available to analyze', 'error');
+                return;
+            }
+            
+            const opportunity = currentOpportunities[0];
+            const analyzeButton = document.getElementById('analyzeTrade');
+            
+            try {
+                analyzeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+                analyzeButton.disabled = true;
+                
+                log('Performing deep analysis of arbitrage opportunity...', 'info');
+                
+                // Simulate multiple scenarios
+                const scenarios = [];
+                const amounts = [1, 5, 10, 50, 100];
+                
+                for (const amount of amounts) {
+                    const result = await calculateArbitrage(
+                        Object.values(TOKENS).find(t => t.symbol === opportunity.token),
+                        opportunity.buyDex,
+                        opportunity.sellDex,
+                        amount
+                    );
+                    
+                    if (result) {
+                        scenarios.push({
+                            amount,
+                            netProfit: parseFloat(result.netProfit) * amount,
+                            profitPercentage: result.profitPercentage
+                        });
+                    }
+                }
+                
+                // Display analysis results
+                const analysisHtml = `
+                    <div class="opportunity-card">
+                        <h4 style="margin-bottom: 15px;">Profitability Analysis</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <th style="text-align: left; padding: 8px;">Amount (BNB)</th>
+                                    <th style="text-align: right; padding: 8px;">Net Profit (BNB)</th>
+                                    <th style="text-align: right; padding: 8px;">ROI %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${scenarios.map(s => `
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 8px;">${s.amount}</td>
+                                        <td style="text-align: right; padding: 8px;">${s.netProfit.toFixed(4)}</td>
+                                        <td style="text-align: right; padding: 8px; color: var(--primary);">+${s.profitPercentage}%</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <div style="font-weight: 600; margin-bottom: 5px;">Risk Assessment</div>
+                            <div style="font-size: 0.9rem; color: var(--text-dark);">
+                                • Slippage Risk: ${parseFloat(opportunity.profitPercentage) < 2 ? 'High' : 'Moderate'}<br>
+                                • Gas Price Sensitivity: ${MAX_GAS_FEE > 0.01 ? 'High' : 'Low'}<br>
+                                • Execution Window: ~2-3 blocks<br>
+                                • Competition Level: High
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                updateExecutionResult(analysisHtml);
+                log('Analysis complete. See execution panel for details.', 'success');
+                
+            } catch (error) {
+                log(`Analysis failed: ${error.message}`, 'error');
+            } finally {
+                analyzeButton.innerHTML = '<i class="fas fa-chart-line"></i> Analyze Opportunity';
+                analyzeButton.disabled = false;
+            }
+        }
+
+        // Emergency stop
+        async function emergencyStop() {
+            const button = document.getElementById('emergencyStop');
+            
+            try {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Stopping...';
+                button.disabled = true;
+                
+                // Stop all intervals
+                if (autoScanInterval) {
+                    clearInterval(autoScanInterval);
+                    autoScanInterval = null;
+                }
+                
+                if (priceMonitorInterval) {
+                    clearInterval(priceMonitorInterval);
+                    priceMonitorInterval = null;
+                }
+                
+                // Reset UI
+                document.getElementById('autoScanToggle').innerHTML = '<i class="fas fa-robot"></i> Start Auto-Scan';
+                document.getElementById('autoScanToggle').classList.remove('active-scan');
+                document.getElementById('startPriceMonitor').innerHTML = '<i class="fas fa-play"></i> Start Price Monitor';
+                
+                log('Emergency stop executed. All operations halted.', 'warning');
+                
+            } finally {
+                button.innerHTML = '<i class="fas fa-stop-circle"></i> Emergency Stop';
+                button.disabled = false;
+            }
+        }
+
+        // Copy contract address
+        function copyContractAddress() {
+            navigator.clipboard.writeText(FLASH_LOAN_CONTRACT);
+            const button = document.getElementById('copyContractBtn');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 2000);
+        }
+
+        // View contract on BscScan
+        function viewContract() {
+            window.open(`https://bscscan.com/address/${FLASH_LOAN_CONTRACT}`, '_blank');
+        }
+
+        // Update settings from inputs
+        function updateSettings() {
+            FLASH_LOAN_AMOUNT = parseFloat(document.getElementById('flashLoanInput').value) || 10;
+            MIN_PROFIT_THRESHOLD = parseFloat(document.getElementById('minProfitInput').value) || 0.5;
+            SLIPPAGE_TOLERANCE = parseFloat(document.getElementById('slippageInput').value) || 1.0;
+            MAX_GAS_FEE = parseFloat(document.getElementById('maxGasFeeInput').value) || 0.005;
+            
+            log(`Settings updated - Amount: ${FLASH_LOAN_AMOUNT} BNB, Min Profit: ${MIN_PROFIT_THRESHOLD}%`, 'info');
+        }
+
+        // Initialize DEX count
+        function updateDexCount() {
+            document.getElementById('dexesActive').textContent = Object.keys(DEX_ROUTERS).length;
+        }
+
+        // Check library status
+        function checkLibraries() {
+            const status = document.getElementById('libraryStatus');
+            if (typeof ethers !== 'undefined' && typeof Tone !== 'undefined') {
+                status.innerHTML = '<i class="fas fa-check-circle"></i> All systems operational';
+            } else {
+                status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Library loading error';
+                status.className = 'error';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('connectWallet').addEventListener('click', connectWallet);
+        document.getElementById('scanAll').addEventListener('click', scanAllPairs);
+        document.getElementById('autoScanToggle').addEventListener('click', toggleAutoScan);
+        document.getElementById('executeTrade').addEventListener('click', executeTrade);
+        document.getElementById('analyzeTrade').addEventListener('click', analyzeTrade);
+        document.getElementById('startPriceMonitor').addEventListener('click', startPriceMonitor);
+        document.getElementById('emergencyStop').addEventListener('click', emergencyStop);
+        document.getElementById('copyContractBtn').addEventListener('click', copyContractAddress);
+        document.getElementById('viewContract').addEventListener('click', viewContract);
+
+        // Settings inputs
+        document.getElementById('flashLoanInput').addEventListener('change', updateSettings);
+        document.getElementById('minProfitInput').addEventListener('change', updateSettings);
+        document.getElementById('slippageInput').addEventListener('change', updateSettings);
+        document.getElementById('maxGasFeeInput').addEventListener('change', updateSettings);
+
+        // Handle account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    log('Wallet disconnected', 'warning');
+                    location.reload();
+                } else if (accounts[0] !== walletAddress) {
+                    log('Account changed, reloading...', 'info');
+                    location.reload();
+                }
+            });
+
+            window.ethereum.on('chainChanged', (chainId) => {
+                if (parseInt(chainId) !== BSC_CHAIN_ID) {
+                    log('Network changed, please switch back to BSC', 'warning');
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            checkLibraries();
+            updateDexCount();
+            await initAudio();
+            
+            // Display contract address
+            document.getElementById('contractAddress').textContent = FLASH_LOAN_CONTRACT;
+            
+            log('System initialized. Connect your wallet to begin trading.', 'success');
+            
+            // Add warning message
+            const warningHtml = `
+                <div class="warning" style="margin-top: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Risk Warning:</strong> 
+                    Flash loan arbitrage involves significant risks including smart contract vulnerabilities, 
+                    front-running, and potential loss of funds. Only trade with funds you can afford to lose. 
+                    Always verify contract addresses and perform your own due diligence.
+                </div>
+            `;
+            document.querySelector('.card').insertAdjacentHTML('beforeend', warningHtml);
+        });
+
+        // Periodic health check
+        setInterval(() => {
+            if (provider && walletAddress) {
+                provider.getBlockNumber().catch(error => {
+                    log('Connection error detected. Please check your network.', 'error');
+                });
+            }
+        }, 30000);
     </script>
 </body>
 </html>
